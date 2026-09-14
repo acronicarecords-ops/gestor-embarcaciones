@@ -74,11 +74,20 @@
   .status-line{font-size:12px; color:var(--header-muted); margin-top:6px;}
 
   /* ---------- Tabs ---------- */
+  .body-row{display:flex; flex-direction:row; flex:1; min-height:0;}
   .tabbar-wrap{
     background:var(--navy-2);
     overflow-x:auto;
     flex-shrink:0;
     border-bottom:3px solid var(--sea);
+  }
+  .tabbar-wrap.vertical{
+    overflow-x:hidden;
+    overflow-y:auto;
+    border-bottom:none;
+    border-right:3px solid var(--sea);
+    width:150px;
+    flex-shrink:0;
   }
   .tabbar{
     display:flex;
@@ -86,6 +95,17 @@
     gap:2px;
     padding:0 8px;
     min-width:max-content;
+  }
+  .tabbar.vertical{
+    flex-direction:column;
+    padding:8px;
+    min-width:0;
+    gap:4px;
+  }
+  .tabbar.vertical .tab{white-space:normal; text-align:left; border-radius:8px; justify-content:space-between;}
+  @media (max-width:480px){
+    .tabbar-wrap.vertical{width:110px;}
+    .tabbar.vertical .tab{font-size:11px; padding:8px 8px;}
   }
   .tab{
     padding:10px 16px;
@@ -107,6 +127,7 @@
   }
   .tab.active .count{background:var(--sea); color:#fff;}
   .tab{ touch-action:pan-x; }
+  .tabbar.vertical .tab{ touch-action:pan-y; }
   .tab.dragging{ opacity:.55; outline:2px dashed var(--coral); outline-offset:-2px; cursor:grabbing; }
 
   /* ---------- Content ---------- */
@@ -123,7 +144,15 @@
     padding:10px 12px;
     display:flex; align-items:center; gap:12px;
   }
+  .boat-card.visto{background:var(--entrada-bg); border-color:var(--entrada-border);}
   .boat-card.checked{background:var(--exit-bg); border-color:var(--exit-border);}
+  .boat-visto{
+    flex-shrink:0; width:24px; height:24px; border-radius:7px; border:2px solid var(--ok);
+    display:flex; align-items:center; justify-content:center; cursor:pointer; background:#fff;
+  }
+  .boat-visto.on{background:var(--ok);}
+  .boat-visto svg{display:none; width:14px; height:14px; stroke:#fff;}
+  .boat-visto.on svg{display:block;}
   .boat-check{
     flex-shrink:0; width:26px; height:26px; border-radius:7px; border:2px solid var(--sea);
     display:flex; align-items:center; justify-content:center; cursor:pointer; background:#fff;
@@ -258,11 +287,12 @@
     boats: [],            // {id, amarre, zona, descripcion, nombre, matricula}
     zoneOrder: [],
     currentZone: null,
-    day: { salidas:{}, entradas:[] },
+    day: { salidas:{}, entradas:[], vistos:{} },
     dateKey: todayKey(),
     uploading:false,
     obsOpen: {},
-    tabDragSuppressUntil: 0
+    tabDragSuppressUntil: 0,
+    tabsVertical:false
   };
 
   function todayKey(){
@@ -371,6 +401,7 @@
   var LS_MASTER = LS_PREFIX + "master";
   var LS_ORDER = LS_PREFIX + "zoneOrder";
   var LS_DAY_PREFIX = LS_PREFIX + "day.";
+  var LS_TABS_VERTICAL = LS_PREFIX + "tabsVertical";
 
   function lsGet(key){
     try{
@@ -434,6 +465,9 @@
       state.currentZone = state.zoneOrder[0] || null;
     }
 
+    var savedTabsVertical = lsGet(LS_TABS_VERTICAL);
+    state.tabsVertical = !!(savedTabsVertical && savedTabsVertical.on);
+
     await loadDay();
     state.ready = true;
     render();
@@ -445,13 +479,13 @@
         var snap = await dbApi.doc("days/"+state.dateKey).get();
         if(snap.exists){
           var data = snap.data();
-          state.day = { salidas: data.salidas || {}, entradas: data.entradas || [] };
+          state.day = { salidas: data.salidas || {}, entradas: data.entradas || [], vistos: data.vistos || {} };
           return;
         }
       }catch(e){ /* sigue abajo y prueba con la copia local */ }
     }
     var local = lsGet(LS_DAY_PREFIX + state.dateKey);
-    state.day = local ? { salidas: local.salidas || {}, entradas: local.entradas || [] } : { salidas:{}, entradas:[] };
+    state.day = local ? { salidas: local.salidas || {}, entradas: local.entradas || [], vistos: local.vistos || {} } : { salidas:{}, entradas:[], vistos:{} };
   }
 
   async function saveDay(){
@@ -575,6 +609,20 @@
     if(!state.day.salidas[boatId]) state.day.salidas[boatId] = {checked:true, obs:""};
     state.day.salidas[boatId].obs = text;
     saveDay();
+  }
+  function toggleVisto(boatId){
+    if(state.day.vistos[boatId]){
+      delete state.day.vistos[boatId];
+    } else {
+      state.day.vistos[boatId] = true;
+    }
+    saveDay();
+    render();
+  }
+  function toggleTabsOrientation(){
+    state.tabsVertical = !state.tabsVertical;
+    lsSet(LS_TABS_VERTICAL, {on: state.tabsVertical});
+    render();
   }
   function addEntrada(zona, data){
     state.day.entradas.push({
@@ -739,20 +787,21 @@
     ev.preventDefault();
     var tabbar = tabDrag.el.parentElement;
     if(!tabbar) return;
+    var vertical = tabbar.classList.contains("vertical");
     var tabs = Array.prototype.slice.call(tabbar.querySelectorAll(".tab"));
-    var x = ev.clientX;
+    var pos = vertical ? ev.clientY : ev.clientX;
     for(var i=0;i<tabs.length;i++){
       if(tabs[i] === tabDrag.el) continue;
       var rect = tabs[i].getBoundingClientRect();
-      var mid = rect.left + rect.width/2;
-      if(x < mid){
+      var mid = vertical ? (rect.top + rect.height/2) : (rect.left + rect.width/2);
+      if(pos < mid){
         if(tabs[i] !== tabDrag.el.nextSibling){
           tabbar.insertBefore(tabDrag.el, tabs[i]);
         }
         return;
       }
     }
-    // más a la derecha que todas: va al final
+    // más al final que todas (a la derecha, o abajo si es vertical): va al final
     if(tabbar.lastElementChild !== tabDrag.el){
       tabbar.appendChild(tabDrag.el);
     }
@@ -814,6 +863,7 @@
 
     var html = "";
     html += renderHeader();
+    if(state.tabsVertical){ html += '<div class="body-row">'; }
     html += renderTabs();
     html += '<main>';
     html += '<div class="zone-header">';
@@ -828,8 +878,13 @@
       boatsInZone.forEach(function(b){
         var salida = state.day.salidas[b.id];
         var isChecked = !!(salida && salida.checked);
+        var isVisto = !!state.day.vistos[b.id];
         var obsOpen = !!state.obsOpen[b.id];
-        html += '<div class="boat-card '+(isChecked?"checked":"")+'">';
+        var cardClass = (isVisto?"visto ":"")+(isChecked?"checked":"");
+        html += '<div class="boat-card '+cardClass+'">';
+        html += '  <div class="boat-visto '+(isVisto?"on":"")+'" data-boat="'+b.id+'" data-action="togglevisto" title="Marcar como visto">';
+        html += '    <svg viewBox="0 0 24 24" fill="none"><path d="M4 12l5 5L20 6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+        html += '  </div>';
         html += '  <div class="boat-info">';
         html += '    <div class="boat-name">'+escapeHtml(b.nombre)+(b.matricula? ' <span class="matricula">'+escapeHtml(b.matricula)+'</span>':'')+'</div>';
         html += '    <div class="boat-meta"><span class="amarre">'+escapeHtml(b.amarre)+'</span>'+escapeHtml(b.descripcion)+'</div>';
@@ -868,6 +923,7 @@
 
     html += '<div class="fab-row"><button class="btn btn-coral" data-action="openentrada">+ Añadir entrada en esta zona</button></div>';
     html += '</main>';
+    if(state.tabsVertical){ html += '</div>'; }
 
     root.innerHTML = html;
     bindEvents();
@@ -886,6 +942,7 @@
     h += '      <div class="brand-text"><h1>Revisión diaria de embarcaciones</h1><span>'+state.boats.length+' embarcaciones · '+state.zoneOrder.length+' zonas</span></div>';
     h += '    </div>';
     h += '    <div class="header-actions">';
+    h += '      <button class="btn btn-ghost" data-action="toggletabs" title="Cambiar posición de las pestañas">'+(state.tabsVertical? "Pestañas arriba":"Pestañas al lado")+'</button>';
     h += '      <label class="btn btn-ghost">Actualizar listado<input type="file" id="fileInput" accept=".xlsx,.xls"></label>';
     h += '      <button class="btn btn-sea" data-action="print">Exportar</button>';
     h += '    </div>';
@@ -898,7 +955,8 @@
   }
 
   function renderTabs(){
-    var h = '<div class="tabbar-wrap"><div class="tabbar">';
+    var vClass = state.tabsVertical ? " vertical" : "";
+    var h = '<div class="tabbar-wrap'+vClass+'"><div class="tabbar'+vClass+'">';
     state.zoneOrder.forEach(function(z){
       var count = state.boats.filter(function(b){ return b.zona===z; }).length;
       var active = z===state.currentZone;
@@ -990,6 +1048,9 @@
     root.querySelectorAll('[data-action="toggle"]').forEach(function(el){
       el.addEventListener("click", function(){ toggleSalida(el.getAttribute("data-boat")); });
     });
+    root.querySelectorAll('[data-action="togglevisto"]').forEach(function(el){
+      el.addEventListener("click", function(){ toggleVisto(el.getAttribute("data-boat")); });
+    });
     root.querySelectorAll('[data-action="toggleobs"]').forEach(function(el){
       el.addEventListener("click", function(){
         var id = el.getAttribute("data-boat");
@@ -1008,6 +1069,9 @@
 
     var printBtn = root.querySelector('[data-action="print"]');
     if(printBtn) printBtn.addEventListener("click", doPrint);
+
+    var toggleTabsBtn = root.querySelector('[data-action="toggletabs"]');
+    if(toggleTabsBtn) toggleTabsBtn.addEventListener("click", toggleTabsOrientation);
   }
 
   loadAll();
