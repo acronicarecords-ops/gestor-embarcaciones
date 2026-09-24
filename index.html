@@ -1,8 +1,4 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1"><style>:root{color-scheme:light}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>Gestor de Embarcaciones — Puerto Sotogrande</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -126,7 +122,7 @@
     background:rgba(255,255,255,.15); color:#fff; padding:1px 6px; border-radius:20px;
   }
   .tab.active .count{background:var(--sea); color:#fff;}
-  .tab{ touch-action:pan-x; }
+  .tab{ touch-action:pan-x; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; }
   .tabbar.vertical .tab{ touch-action:pan-y; }
   .tab.dragging{ opacity:.55; outline:2px dashed var(--coral); outline-offset:-2px; cursor:grabbing; }
 
@@ -135,6 +131,14 @@
   .zone-header{display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; flex-wrap:wrap; gap:10px;}
   .zone-title{font-size:16px; font-weight:700; color:var(--navy);}
   .zone-progress{font-size:12px; color:var(--muted);}
+  .zone-side{display:flex; flex-direction:column; align-items:flex-end; gap:6px; margin-left:auto;}
+  .sort-btn{
+    width:26px; height:26px; margin-right:13px; padding:0; border-radius:7px; border:2px solid var(--sea);
+    background:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center;
+    font-size:15px; line-height:1; -webkit-tap-highlight-color:transparent;
+  }
+  .sort-btn.desc{background:var(--entrada-bg);}
+  .sort-btn:active{transform:translateY(1px);}
 
   .boat-list{display:flex; flex-direction:column; gap:8px;}
   .boat-card{
@@ -162,7 +166,7 @@
   .boat-check.on svg{display:block;}
   .boat-info{flex:1; min-width:0;}
   .boat-name{font-weight:700; font-size:14px; color:var(--ink);}
-  .boat-name .matricula{font-weight:700; color:var(--sea-dark); margin-left:8px;}
+  .boat-name .matricula{display:block; font-weight:700; color:var(--sea-dark); margin-top:1px;}
   .boat-meta{font-size:12px; color:var(--muted); margin-top:2px;}
   .boat-meta .amarre{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; color:var(--sea-dark); font-weight:700; margin-right:8px;}
   .boat-salida{display:flex; align-items:center; gap:8px; flex-shrink:0; cursor:pointer; padding-left:8px;}
@@ -285,8 +289,6 @@
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#242254">
 <link rel="apple-touch-icon" href="icon-192.png">
-</head>
-<body>
 <div id="app"></div>
 <div id="printArea"></div>
 
@@ -305,7 +307,10 @@
     uploading:false,
     obsOpen: {},
     tabDragSuppressUntil: 0,
-    tabsVertical:false
+    tabsVertical:false,
+    listScroll: {},       // posición vertical de la lista por zona
+    tabScroll: {x:0, y:0}, // posición de la barra de pestañas
+    sortDesc: {}          // zonas con la lista en orden descendente
   };
 
   function todayKey(){
@@ -415,6 +420,8 @@
   var LS_ORDER = LS_PREFIX + "zoneOrder";
   var LS_DAY_PREFIX = LS_PREFIX + "day.";
   var LS_TABS_VERTICAL = LS_PREFIX + "tabsVertical";
+  var LS_SORT = LS_PREFIX + "sortDesc"; // orden ascendente/descendente por zona
+  var LS_VIEW = LS_PREFIX + "view"; // zona actual + posiciones de desplazamiento
 
   function lsGet(key){
     try{
@@ -476,8 +483,15 @@
     if(state.boats.length){
       ensureZoneOrder();
       state.currentZone = state.zoneOrder[0] || null;
+      var view = lsGet(LS_VIEW);
+      if(view){
+        if(view.currentZone && state.zoneOrder.indexOf(view.currentZone) !== -1) state.currentZone = view.currentZone;
+        state.listScroll = view.listScroll || {};
+        state.tabScroll = view.tabScroll || {x:0, y:0};
+      }
     }
 
+    state.sortDesc = lsGet(LS_SORT) || {};
     var savedTabsVertical = lsGet(LS_TABS_VERTICAL);
     state.tabsVertical = !!(savedTabsVertical && savedTabsVertical.on);
 
@@ -581,6 +595,11 @@
       state.boats = boats;
       ensureZoneOrder();
       state.currentZone = state.zoneOrder[0] || null;
+      // Al importar un listado nuevo se reinician las posiciones guardadas.
+      state.listScroll = {};
+      state.tabScroll = {x:0, y:0};
+      root.querySelectorAll("main, .tabbar-wrap").forEach(function(el){ el.scrollTop = 0; el.scrollLeft = 0; });
+      saveViewNow();
       state.masterUpdatedAt = new Date().toISOString();
 
       // Copia local siempre (garantiza que el listado sigue ahí aunque no
@@ -769,14 +788,64 @@
     openPrintPreview();
   }
 
+  // ---------------- Posiciones de desplazamiento ----------------
+  // Cada zona recuerda por dónde iba su lista, y la barra de pestañas
+  // recuerda por dónde se dejó. Se guarda en el dispositivo (sobrevive a
+  // recargas) y se reinicia solo al importar un Excel nuevo.
+  var viewSaveTimer = null;
+  function saveViewNow(){
+    clearTimeout(viewSaveTimer); viewSaveTimer = null;
+    lsSet(LS_VIEW, { currentZone: state.currentZone, listScroll: state.listScroll, tabScroll: state.tabScroll });
+  }
+  function saveViewSoon(){
+    if(viewSaveTimer) return;
+    viewSaveTimer = setTimeout(saveViewNow, 400);
+  }
+  window.addEventListener("pagehide", saveViewNow);
+  document.addEventListener("visibilitychange", function(){ if(document.visibilityState === "hidden") saveViewNow(); });
+
+  function captureScroll(){
+    var mainEl = root.querySelector("main");
+    var mz = mainEl && mainEl.getAttribute("data-zone");
+    if(mz) state.listScroll[mz] = mainEl.scrollTop;
+    var tw = root.querySelector(".tabbar-wrap");
+    if(tw) state.tabScroll = { x: tw.scrollLeft, y: tw.scrollTop };
+  }
+  function restoreScroll(){
+    var tw = root.querySelector(".tabbar-wrap");
+    if(tw){
+      tw.scrollLeft = state.tabScroll.x || 0;
+      tw.scrollTop = state.tabScroll.y || 0;
+      tw.addEventListener("scroll", function(){
+        state.tabScroll = { x: tw.scrollLeft, y: tw.scrollTop };
+        saveViewSoon();
+      }, {passive:true});
+    }
+    var mainEl = root.querySelector("main");
+    if(mainEl){
+      var zone = state.currentZone;
+      mainEl.scrollTop = state.listScroll[zone] || 0;
+      mainEl.addEventListener("scroll", function(){
+        state.listScroll[zone] = mainEl.scrollTop;
+        saveViewSoon();
+      }, {passive:true});
+    }
+  }
+
   // ---------------- Reordenar pestañas (mantener pulsado y arrastrar) ----------------
   // El drag & drop nativo de HTML5 (draggable="true") no funciona con el dedo
   // en móviles (Android/iOS), solo con ratón. Se sustituye por un gesto de
   // "mantener pulsado" implementado con Pointer Events, que funciona igual
   // con ratón y con el dedo. Mientras se mantiene pulsada una pestaña más de
-  // ~350ms sin moverse demasiado, se activa el modo de arrastre: al mover el
+  // 2 s sin moverse demasiado, se activa el modo de arrastre: al mover el
   // dedo/ratón por encima de otras pestañas se van intercambiando en vivo, y
   // al soltar se guarda el nuevo orden.
+  // Solo se entra en modo "mover" tras mantener pulsada la pestaña 2 s sin
+  // desplazar el dedo/ratón. Cualquier desplazamiento previo (deslizar la
+  // barra o la lista), soltar antes de tiempo o que el navegador cancele el
+  // gesto anula el arrastre por completo.
+  var TAB_HOLD_MS = 2000;
+  var TAB_MOVE_TOLERANCE = 10;
   var tabDrag = null; // {el, startX, startY, timer, active, pointerId}
 
   function onTabPointerDown(el, ev){
@@ -784,23 +853,23 @@
     cancelTabDrag();
     var startX = ev.clientX, startY = ev.clientY;
     var timer = setTimeout(function(){
-      if(!tabDrag) return;
+      if(!tabDrag || tabDrag.el !== el) return;
       tabDrag.active = true;
       el.classList.add("dragging");
-      document.addEventListener("pointermove", onTabPointerMove);
-      document.addEventListener("pointerup", onTabPointerUp);
-      document.addEventListener("pointercancel", onTabPointerUp);
-    }, 350);
+      if(navigator.vibrate){ try{ navigator.vibrate(40); }catch(e){} }
+    }, TAB_HOLD_MS);
     tabDrag = { el: el, startX: startX, startY: startY, timer: timer, active: false, pointerId: ev.pointerId };
+    // Se escucha desde el primer momento, para poder anular el gesto si el
+    // usuario desplaza antes de cumplirse los 2 s.
+    document.addEventListener("pointermove", onTabPointerMove);
+    document.addEventListener("pointerup", onTabPointerUp);
+    document.addEventListener("pointercancel", onTabPointerCancel);
   }
 
   function onTabPointerMove(ev){
-    if(!tabDrag) return;
+    if(!tabDrag || ev.pointerId !== tabDrag.pointerId) return;
     if(!tabDrag.active){
-      // Si se mueve demasiado antes de que pase el tiempo de espera, se
-      // entiende como un gesto normal (p. ej. desplazar la barra) y se
-      // cancela el posible arrastre.
-      if(Math.abs(ev.clientX - tabDrag.startX) > 10 || Math.abs(ev.clientY - tabDrag.startY) > 10){
+      if(Math.abs(ev.clientX - tabDrag.startX) > TAB_MOVE_TOLERANCE || Math.abs(ev.clientY - tabDrag.startY) > TAB_MOVE_TOLERANCE){
         cancelTabDrag();
       }
       return;
@@ -822,42 +891,62 @@
         return;
       }
     }
-    // más al final que todas (a la derecha, o abajo si es vertical): va al final
     if(tabbar.lastElementChild !== tabDrag.el){
       tabbar.appendChild(tabDrag.el);
     }
   }
 
-  function onTabPointerUp(){
-    if(!tabDrag) return;
-    var wasActive = tabDrag.active;
-    var tabbar = tabDrag.el.parentElement;
+  function removeTabDragListeners(){
     document.removeEventListener("pointermove", onTabPointerMove);
     document.removeEventListener("pointerup", onTabPointerUp);
-    document.removeEventListener("pointercancel", onTabPointerUp);
+    document.removeEventListener("pointercancel", onTabPointerCancel);
+  }
+
+  function onTabPointerUp(ev){
+    if(!tabDrag || (ev && ev.pointerId !== tabDrag.pointerId)) return;
+    if(!tabDrag.active){ cancelTabDrag(); return; }
+    finishTabDrag();
+  }
+  function onTabPointerCancel(ev){
+    if(!tabDrag || (ev && ev.pointerId !== tabDrag.pointerId)) return;
+    if(tabDrag.active) finishTabDrag(); else cancelTabDrag();
+  }
+
+  function finishTabDrag(){
+    var tabbar = tabDrag.el.parentElement;
     clearTimeout(tabDrag.timer);
-    if(wasActive && tabbar){
-      tabDrag.el.classList.remove("dragging");
-      var newOrder = Array.prototype.map.call(tabbar.querySelectorAll(".tab"), function(el){ return el.getAttribute("data-zone"); });
-      state.zoneOrder = newOrder;
-      // Evita que el "click" fantasma que dispara el navegador al soltar
-      // (y solo ese, durante una ventana breve) cambie de zona sin querer.
-      state.tabDragSuppressUntil = Date.now() + 400;
-      saveZoneOrder();
-      render();
-    }
+    removeTabDragListeners();
+    tabDrag.el.classList.remove("dragging");
     tabDrag = null;
+    // Evita que el "click" que dispara el navegador al soltar cambie de zona.
+    state.tabDragSuppressUntil = Date.now() + 400;
+    if(tabbar){
+      var newOrder = Array.prototype.map.call(tabbar.querySelectorAll(".tab"), function(el){ return el.getAttribute("data-zone"); });
+      if(newOrder.join("|") !== state.zoneOrder.join("|")){
+        state.zoneOrder = newOrder;
+        saveZoneOrder();
+      }
+    }
+    render();
   }
 
   function cancelTabDrag(){
     if(!tabDrag) return;
     clearTimeout(tabDrag.timer);
     if(tabDrag.active && tabDrag.el) tabDrag.el.classList.remove("dragging");
-    document.removeEventListener("pointermove", onTabPointerMove);
-    document.removeEventListener("pointerup", onTabPointerUp);
-    document.removeEventListener("pointercancel", onTabPointerUp);
+    removeTabDragListeners();
     tabDrag = null;
   }
+
+  // En pantallas táctiles, mientras se arrastra una pestaña se bloquea el
+  // desplazamiento de la página para que el navegador no se lleve el gesto.
+  document.addEventListener("touchmove", function(ev){
+    if(tabDrag && tabDrag.active && ev.cancelable) ev.preventDefault();
+  }, {passive:false});
+  // Evita el menú contextual (mantener pulsado) sobre las pestañas.
+  document.addEventListener("contextmenu", function(ev){
+    if(ev.target && ev.target.closest && ev.target.closest(".tab")) ev.preventDefault();
+  });
 
   // ---------------- Modal "añadir entrada" ----------------
   var modalState = null; // { zona }
@@ -879,17 +968,23 @@
 
     var boatsInZone = state.boats.filter(function(b){ return b.zona === state.currentZone; })
       .sort(function(a,b){ return a.amarre.localeCompare(b.amarre, "es", {numeric:true}); });
+    var sortDesc = !!state.sortDesc[state.currentZone];
+    if(sortDesc) boatsInZone.reverse();
     var checkedCount = boatsInZone.filter(function(b){ return state.day.salidas[b.id] && state.day.salidas[b.id].checked; }).length;
     var entradasZona = state.day.entradas.filter(function(e){ return e.zona === state.currentZone; });
 
+    captureScroll();
     var html = "";
     html += renderHeader();
     if(state.tabsVertical){ html += '<div class="body-row">'; }
     html += renderTabs();
-    html += '<main>';
+    html += '<main data-zone="'+escapeHtml(state.currentZone)+'">';
     html += '<div class="zone-header">';
     html += '  <div class="zone-title">Zona '+escapeHtml(state.currentZone)+'</div>';
-    html += '  <div class="zone-progress">'+checkedCount+' / '+boatsInZone.length+' con salida marcada</div>';
+    html += '  <div class="zone-side">';
+    html += '    <button class="sort-btn'+(sortDesc?" desc":"")+'" data-action="togglesort" title="'+(sortDesc?"Orden descendente (pulsa para ascendente)":"Orden ascendente (pulsa para descendente)")+'" aria-label="Cambiar orden">🔃</button>';
+    html += '    <div class="zone-progress">'+checkedCount+' / '+boatsInZone.length+' con salida marcada</div>';
+    html += '  </div>';
     html += '</div>';
 
     if(!boatsInZone.length){
@@ -947,6 +1042,8 @@
     if(state.tabsVertical){ html += '</div>'; }
 
     root.innerHTML = html;
+    restoreScroll();
+    saveViewSoon();
     bindEvents();
 
     if(modalState){
@@ -1060,6 +1157,7 @@
         // Tras un arrastre para reordenar, el navegador dispara igualmente
         // un "click" al soltar; se ignora esa vez para no cambiar de zona.
         if(Date.now() < state.tabDragSuppressUntil){ return; }
+        captureScroll();
         state.currentZone = el.getAttribute("data-zone");
         render();
       });
@@ -1091,6 +1189,16 @@
     var printBtn = root.querySelector('[data-action="print"]');
     if(printBtn) printBtn.addEventListener("click", doPrint);
 
+    var sortBtn = root.querySelector('[data-action="togglesort"]');
+    if(sortBtn) sortBtn.addEventListener("click", function(){
+      var z = state.currentZone;
+      if(state.sortDesc[z]) delete state.sortDesc[z]; else state.sortDesc[z] = true;
+      lsSet(LS_SORT, state.sortDesc);
+      state.listScroll[z] = 0; // al invertir el orden se empieza desde arriba
+      var m = root.querySelector("main"); if(m) m.scrollTop = 0;
+      render();
+    });
+
     var toggleTabsBtn = root.querySelector('[data-action="toggletabs"]');
     if(toggleTabsBtn) toggleTabsBtn.addEventListener("click", toggleTabsOrientation);
   }
@@ -1105,5 +1213,5 @@ if("serviceWorker" in navigator){
   });
 }
 </script>
-</body>
-</html>
+
+</body></html>
