@@ -136,19 +136,19 @@
   .zone-progress{font-size:12px; color:var(--muted);}
   .zone-side{display:flex; flex-direction:column; align-items:flex-end; gap:6px; margin-left:auto;}
   .sort-btn{
-    width:26px; height:26px; margin-right:13px; padding:0; border-radius:7px; border:2px solid var(--sea);
+    width:26px; height:26px; margin-right:24px; padding:0; border-radius:7px; border:2px solid var(--sea);
     background:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center;
     font-size:15px; line-height:1; -webkit-tap-highlight-color:transparent;
   }
   .sort-btn.desc{background:var(--entrada-bg);}
-  .zone-tools{display:flex; align-items:center; gap:8px;}
+  .zone-tools{display:flex; align-items:center; justify-content:flex-end; gap:8px; flex-wrap:wrap; margin-bottom:10px;}
   .swap-btn{
     border:none; border-radius:8px; padding:6px 12px; font-size:12px; font-weight:600;
     background:var(--navy); color:#fff; cursor:pointer; font-family:inherit; -webkit-tap-highlight-color:transparent;
   }
   .swap-btn:active{transform:translateY(1px);}
   /* Casillas de marcación: Salida (roja, sin etiqueta) y Visto (verde, con etiqueta) */
-  .mark{display:flex; align-items:center; gap:8px; flex-shrink:0; cursor:pointer; -webkit-tap-highlight-color:transparent;}
+  .mark{display:flex; flex-direction:column; align-items:center; gap:3px; width:48px; flex-shrink:0; cursor:pointer; -webkit-tap-highlight-color:transparent;}
   .mark-box{
     width:26px; height:26px; border-radius:7px; border:2px solid; flex-shrink:0;
     display:flex; align-items:center; justify-content:center;
@@ -160,7 +160,9 @@
   .mark-visto .mark-box{border-color:var(--ok); background:#dcefe0;}
   .mark-visto .mark-box.on{background:var(--ok);}
   .mark-label{font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.04em;}
-  .boat-card.visto .mark-label{color:var(--ok);}
+  .mark-label{font-size:10px;}
+  .boat-card.visto .mark-visto .mark-label{color:var(--ok);}
+  .boat-card.checked .mark-salida .mark-label{color:var(--exit);}
   .sort-btn:active{transform:translateY(1px);}
 
   .boat-list{display:flex; flex-direction:column; gap:8px;}
@@ -231,6 +233,8 @@
     width:100%; padding:9px 10px; border:1px solid var(--line); border-radius:7px; font-size:14px; font-family:inherit;
   }
   .field textarea{resize:vertical; min-height:84px;}
+  .field input{min-height:52px;}
+  .atraque-input input{min-height:50px;}
   .atraque-input{display:flex; align-items:stretch; border:1px solid var(--line); border-radius:7px; overflow:hidden;}
   .atraque-input .atraque-prefix{
     background:#f0ede3; color:var(--muted); font-weight:700; padding:0 10px; display:flex; align-items:center;
@@ -1086,11 +1090,14 @@
     if(state.tabsVertical){ html += '<div class="body-row">'; }
     html += renderTabs();
     html += '<main data-zone="'+escapeHtml(state.currentZone)+'">';
+    html += '<div class="zone-tools">';
+    html += '  <button class="swap-btn" data-action="toggletabs" title="Cambiar posición de las pestañas">'+(state.tabsVertical? "Pestañas arriba":"Pestañas al lado")+'</button>';
+    html += '  <button class="swap-btn" data-action="swapchecks" title="Intercambiar de lado las casillas de Visto y Salida">Cambiar casillas</button>';
+    html += '    <button class="sort-btn'+(sortDesc?" desc":"")+'" data-action="togglesort" title="'+(sortDesc?"Orden descendente (pulsa para ascendente)":"Orden ascendente (pulsa para descendente)")+'" aria-label="Cambiar orden">🔃</button>';
+    html += '</div>';
     html += '<div class="zone-header">';
     html += '  <div class="zone-title">Zona '+escapeHtml(state.currentZone)+'</div>';
     html += '  <div class="zone-side">';
-    html += '    <div class="zone-tools"><button class="swap-btn" data-action="swapchecks" title="Intercambiar de lado las casillas de Visto y Salida">Cambiar casillas</button>';
-    html += '    <button class="sort-btn'+(sortDesc?" desc":"")+'" data-action="togglesort" title="'+(sortDesc?"Orden descendente (pulsa para ascendente)":"Orden ascendente (pulsa para descendente)")+'" aria-label="Cambiar orden">🔃</button></div>';
     html += '    <div class="zone-progress">'+checkedCount+' / '+boatsInZone.length+' con salida marcada</div>';
     html += '  </div>';
     html += '</div>';
@@ -1107,11 +1114,11 @@
         var cardClass = (isVisto?"visto ":"")+(isChecked?"checked":"");
         html += '<div class="boat-card '+cardClass+'">';
         var tick = '<svg viewBox="0 0 24 24" fill="none"><path d="M4 12l5 5L20 6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-        var salidaHtml = '<div class="mark mark-salida" data-boat="'+b.id+'" data-action="toggle" title="Marcar salida"><div class="mark-box '+(isChecked?"on":"")+'">'+tick+'</div></div>';
+        var salidaHtml = '<div class="mark mark-salida" data-boat="'+b.id+'" data-action="toggle" title="Marcar salida"><div class="mark-box '+(isChecked?"on":"")+'">'+tick+'</div><span class="mark-label">Salida</span></div>';
         var vistoBox = '<div class="mark-box '+(isVisto?"on":"")+'">'+tick+'</div>';
         var vistoLabel = '<span class="mark-label">Visto</span>';
         // Por defecto: Salida a la izquierda y Visto (con etiqueta) a la derecha.
-        var vistoRight = '<div class="mark mark-visto" data-boat="'+b.id+'" data-action="togglevisto" title="Marcar como visto">'+vistoLabel+vistoBox+'</div>';
+        var vistoRight = '<div class="mark mark-visto" data-boat="'+b.id+'" data-action="togglevisto" title="Marcar como visto">'+vistoBox+vistoLabel+'</div>';
         var vistoLeft = '<div class="mark mark-visto" data-boat="'+b.id+'" data-action="togglevisto" title="Marcar como visto">'+vistoBox+vistoLabel+'</div>';
         html += '  ' + (state.checksSwapped ? vistoLeft : salidaHtml);
         html += '  <div class="boat-info">';
@@ -1167,7 +1174,7 @@
     h += '      <div class="brand-text"><h1>Revisión diaria de embarcaciones</h1><span>'+state.boats.length+' embarcaciones · '+state.zoneOrder.length+' zonas</span></div>';
     h += '    </div>';
     h += '    <div class="header-actions">';
-    h += '      <button class="btn btn-ghost" data-action="toggletabs" title="Cambiar posición de las pestañas">'+(state.tabsVertical? "Pestañas arriba":"Pestañas al lado")+'</button>';
+    h += '      <span aria-hidden="true"></span>';
     h += '      <label class="btn btn-ghost">Actualizar listado<input type="file" id="fileInput" accept=".xlsx,.xls"></label>';
     h += '      <button class="btn btn-coral" data-action="openentrada">+ Añadir entrada</button>';
     h += '      <button class="btn btn-sea" data-action="print">Compartir</button>';
@@ -1221,9 +1228,12 @@
       var atraque;
       if(prefix){
         var num = document.getElementById("m_atraque_num").value.trim();
+        if(prefix === "A" && /^\d{1,2}$/.test(num)) num = num.padStart(3, "0"); // A5 → A005, A45 → A045
         atraque = num ? (prefix + num) : prefix;
       } else {
         atraque = document.getElementById("m_atraque_free").value.trim();
+        var mA = /^A(\d{1,2})$/i.exec(atraque);
+        if(mA) atraque = "A" + mA[1].padStart(3, "0");
       }
       var observaciones = document.getElementById("m_observaciones").value.trim();
       var zona = modalState.zona;
