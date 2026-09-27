@@ -1,10 +1,4 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-</head>
-<body>
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>Gestor PST Corporativo</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -452,7 +446,7 @@ main{padding:18px 16px;}
 .header-left{display:flex; flex-direction:column; gap:6px; min-width:0;}
 .m-show{display:none;}
 .brand-text h1 .h1-l2{display:inline; font:inherit; color:inherit; letter-spacing:inherit; margin:0; line-height:inherit;}
-@media (max-width:640px){
+@media (max-width:640px), (max-height:500px){
   header{padding:8px 12px 8px 12px;}
   .header-row{flex-wrap:nowrap; align-items:center; gap:8px;}
   .header-left{flex:1 1 auto; gap:4px;}
@@ -471,6 +465,14 @@ main{padding:18px 16px;}
   header .btn{padding:6px 9px; font-size:11px; line-height:13px; border-radius:5px; letter-spacing:0;}
   header .btn-ghost{padding:5px 9px;}
 }
+/* Barra de botones de zona (v4) */
+.header-actions{grid-template-columns:1fr;}
+.zone-tools{justify-content:space-between; flex-wrap:nowrap; gap:6px;}
+.zone-tools-right{display:flex; align-items:center; justify-content:flex-end; gap:6px; flex-wrap:wrap; margin-left:auto;}
+.zone-tools .swap-btn{padding:6px 7px; font-size:11px; letter-spacing:0; white-space:nowrap; line-height:14px;}
+.zone-tools{gap:5px;} .zone-tools-right{gap:5px;}
+@media (max-width:420px){ .zone-tools .sort-btn{margin-right:6px;} }
+.zone-tools .add-btn{background:var(--sea); flex-shrink:0;}
 /* El parte exportado conserva su formato original */
 .print-preview-paper,#printArea,.p-head,.p-section-title,.p-date,.p-title,table.p-table{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;}}
@@ -1260,9 +1262,12 @@ main{padding:18px 16px;}
     html += renderTabs();
     html += '<main data-zone="'+escapeHtml(state.currentZone)+'">';
     html += '<div class="zone-tools">';
+    html += '  <button class="swap-btn add-btn" data-action="openentrada" title="Añadir una entrada en esta zona">+ Añadir entrada</button>';
+    html += '  <div class="zone-tools-right">';
     html += '  <button class="swap-btn" data-action="toggletabs" title="Cambiar posición de las pestañas">'+(state.tabsVertical? "Pestañas arriba":"Pestañas al lado")+'</button>';
     html += '  <button class="swap-btn" data-action="swapchecks" title="Intercambiar de lado las casillas de Visto y Salida">Cambiar casillas</button>';
     html += '    <button class="sort-btn'+(sortDesc?" desc":"")+'" data-action="togglesort" title="'+(sortDesc?"Orden descendente (pulsa para ascendente)":"Orden ascendente (pulsa para descendente)")+'" aria-label="Cambiar orden">🔃</button>';
+    html += '  </div>';
     html += '</div>';
     html += '<div class="zone-header">';
     html += '  <div class="zone-title">Zona '+escapeHtml(state.currentZone)+'</div>';
@@ -1358,9 +1363,7 @@ main{padding:18px 16px;}
     h += '    </div>';
     h += '   </div>';
     h += '    <div class="header-actions">';
-    h += '      <span aria-hidden="true"></span>';
     h += '      <label class="btn btn-ghost">Actualizar listado<input type="file" id="fileInput" accept=".xlsx,.xls"></label>';
-    h += '      <button class="btn btn-coral" data-action="openentrada">+ Añadir entrada</button>';
     h += '      <button class="btn btn-sea" data-action="print">Compartir</button>';
     h += '    </div>';
     h += '  </div>';
@@ -1529,5 +1532,5 @@ if("serviceWorker" in navigator){
   });
 }
 </script>
-</body>
-</html>
+
+</body></html>
