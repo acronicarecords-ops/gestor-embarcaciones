@@ -470,7 +470,8 @@ main{padding:18px 16px;}
 .zone-tools{justify-content:space-between; flex-wrap:nowrap; gap:6px;}
 .zone-tools-right{display:flex; align-items:center; justify-content:flex-end; gap:6px; flex-wrap:wrap; margin-left:auto;}
 .zone-tools .swap-btn{padding:6px 7px; font-size:11px; letter-spacing:0; white-space:nowrap; line-height:14px;}
-.zone-tools{gap:5px;} .zone-tools-right{gap:5px;}
+.zone-tools{gap:5px; align-items:flex-start;} .zone-tools-right{gap:5px;}
+/* Si los botones de la derecha pasan a dos líneas, + Añadir entrada queda alineado con la primera */
 @media (max-width:420px){ .zone-tools .sort-btn{margin-right:6px;} }
 .zone-tools .add-btn{background:var(--sea); flex-shrink:0;}
 /* El parte exportado conserva su formato original */
@@ -793,6 +794,17 @@ main{padding:18px 16px;}
       }
 
       state.boats = boats;
+      // Listado nuevo = revisión nueva: todo vuelve a la configuración inicial
+      // (cada día puede hacer la revisión un compañero distinto).
+      state.zoneOrder = [];            // orden de pestañas original
+      state.sortDesc = {};             // 🔃 ascendente en todas las zonas
+      state.tabsVertical = false;      // pestañas arriba
+      state.checksSwapped = false;     // casillas en su posición original
+      lsSet(LS_SORT, state.sortDesc);
+      lsSet(LS_TABS_VERTICAL, {on:false});
+      lsSet(LS_CHECKS_SWAP, {on:false});
+      state.day = { salidas:{}, entradas:[], vistos:{} }; // sin marcas ni entradas añadidas
+      try{ await saveDay(); }catch(e){}
       ensureZoneOrder();
       state.currentZone = state.zoneOrder[0] || null;
       // Al importar un listado nuevo se reinician las posiciones guardadas.
