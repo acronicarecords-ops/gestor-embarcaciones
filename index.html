@@ -367,10 +367,15 @@ body{background:var(--sand); color:var(--ink); font-family:var(--f-body); font-w
 #app{background:var(--sand);}
 
 /* Cabecera */
-header{background:var(--navy); padding:16px 16px 12px; border-bottom:4px solid var(--sea);}
+header{background:var(--navy); padding:14px 18px 10px 18px; border-bottom:3px solid var(--sea);}
+header .btn{min-height:0; padding:9px 14px; font-size:13px; line-height:15px;}
+header .btn-ghost{padding:8px 14px;}
+header .status-line,header .status-total{line-height:14px;}
 .brand-logo{border-radius:5px; background:#fff; padding:2px;}
-.brand-text h1{font-family:var(--f-display); font-weight:400; font-size:21px; letter-spacing:-.3px; line-height:1.1; text-wrap:balance;}
-.brand-text span{font-size:12px; letter-spacing:.06em; text-transform:uppercase; font-weight:500;}
+.brand-text h1{font-family:var(--f-display); font-weight:400; font-size:17px; letter-spacing:-.2px; line-height:18px;}
+.brand-text span{display:block; font-size:11px; letter-spacing:.04em; font-weight:500; line-height:14px; margin-top:1px;}
+.brand-text h1{line-height:17px;}
+.brand-logo{padding:0;}
 .status-line{font-size:12px;}
 .status-total{font-weight:700; letter-spacing:.02em;}
 
@@ -402,12 +407,13 @@ header{background:var(--navy); padding:16px 16px 12px; border-bottom:4px solid v
 main{padding:18px 16px;}
 .zone-title{font-family:var(--f-display); font-weight:400; font-size:26px; letter-spacing:-.5px; color:var(--navy); line-height:1.1;}
 .zone-progress{font-size:12px; letter-spacing:.04em; text-transform:uppercase; font-weight:600; color:var(--muted); font-variant-numeric:tabular-nums;}
-.sort-btn{border-radius:6px; border-color:var(--sea); overflow:hidden; padding:0;}
-.sort-btn .sort-ico{display:block; font-size:30px; line-height:1; width:100%; height:100%; display:flex; align-items:center; justify-content:center; transform:scale(1.02);}
+.sort-btn{border-radius:6px; border-color:var(--sea);}
 .sort-btn.desc{background:var(--entrada-bg);}
-.obs-group{border-top:1px solid var(--line); margin-top:4px; padding-top:10px;}
-.obs-group-title{font-family:var(--f-display); font-size:18px; color:var(--navy); margin-bottom:8px;}
-.field input.one-line{min-height:44px;}
+.obs-fields{display:flex; flex-direction:column; gap:2px; margin-top:4px;}
+.obs-lbl{font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin-top:6px;}
+.obs-fields .obs-input{margin-top:0; min-height:36px; font-size:14px; color:var(--navy); background:#fff;}
+.obs-fields .obs-text{resize:vertical; min-height:56px;}
+.obs-summary{font-size:12px; color:var(--navy); margin-top:4px; line-height:1.4;}
 .swap-btn{border-radius:6px; background:var(--navy); font-family:var(--f-body);}
 
 .boat-list{gap:6px;}
@@ -805,9 +811,9 @@ main{padding:18px 16px;}
     saveDay();
     render();
   }
-  function setObs(boatId, text){
+  function setObs(boatId, text, field){
     if(!state.day.salidas[boatId]) state.day.salidas[boatId] = {checked:true, obs:""};
-    state.day.salidas[boatId].obs = text;
+    state.day.salidas[boatId][field || "obs"] = text;
     saveDay();
   }
   function toggleVisto(boatId){
@@ -825,13 +831,15 @@ main{padding:18px 16px;}
     render();
   }
   // Texto de observaciones de una entrada: "ELEC. -> x / AGUA -> y / observaciones"
-  function obsEntrada(e){
+  function fmtObs(elec, agua, obs){
     var parts = [];
-    if(e.elec) parts.push("ELEC. -> " + e.elec);
-    if(e.agua) parts.push("AGUA -> " + e.agua);
-    if(e.observaciones) parts.push(e.observaciones);
+    if(elec) parts.push("ELEC. -> " + elec);
+    if(agua) parts.push("AGUA -> " + agua);
+    if(obs) parts.push(obs);
     return parts.join(" / ");
   }
+  function obsEntrada(e){ return fmtObs(e.elec, e.agua, e.observaciones); }
+  function obsSalida(x){ x = x || {}; return fmtObs(x.elec, x.agua, x.obs); }
   function addEntrada(zona, data){
     state.day.entradas.push({
       id: "e"+Date.now()+Math.random().toString(36).slice(2,6),
@@ -882,7 +890,7 @@ main{padding:18px 16px;}
         "<td></td>"+
         "<td></td>"+
         "<td>"+escapeHtml(b.amarre||"")+"</td>"+
-        "<td>"+escapeHtml(extra.obs||"")+"</td>"+
+        "<td>"+escapeHtml(obsSalida(extra))+"</td>"+
       "</tr>";
     }, "Sin salidas registradas", 5);
 
@@ -1230,7 +1238,7 @@ main{padding:18px 16px;}
     html += '<div class="zone-tools">';
     html += '  <button class="swap-btn" data-action="toggletabs" title="Cambiar posición de las pestañas">'+(state.tabsVertical? "Pestañas arriba":"Pestañas al lado")+'</button>';
     html += '  <button class="swap-btn" data-action="swapchecks" title="Intercambiar de lado las casillas de Visto y Salida">Cambiar casillas</button>';
-    html += '    <button class="sort-btn'+(sortDesc?" desc":"")+'" data-action="togglesort" title="'+(sortDesc?"Orden descendente (pulsa para ascendente)":"Orden ascendente (pulsa para descendente)")+'" aria-label="Cambiar orden"><span class="sort-ico">🔃</span></button>';
+    html += '    <button class="sort-btn'+(sortDesc?" desc":"")+'" data-action="togglesort" title="'+(sortDesc?"Orden descendente (pulsa para ascendente)":"Orden ascendente (pulsa para descendente)")+'" aria-label="Cambiar orden">🔃</button>';
     html += '</div>';
     html += '<div class="zone-header">';
     html += '  <div class="zone-title">Zona '+escapeHtml(state.currentZone)+'</div>';
@@ -1263,7 +1271,14 @@ main{padding:18px 16px;}
         html += '    <div class="boat-meta"><span class="amarre">'+escapeHtml(b.amarre)+'</span>'+escapeHtml(b.descripcion)+'</div>';
         html += '    <button class="obs-toggle" data-action="toggleobs" data-boat="'+b.id+'">'+(obsOpen? "ocultar observación":"añadir observación")+'</button>';
         if(obsOpen){
-          html += '    <input class="obs-input" data-action="obsinput" data-boat="'+b.id+'" placeholder="Observación (opcional)" value="'+escapeHtml((salida&&salida.obs)||"")+'">';
+          var sx = salida || {};
+          html += '    <div class="obs-fields">';
+          html += '      <label class="obs-lbl" for="elec_'+b.id+'">Consumo de electricidad</label><input class="obs-input" id="elec_'+b.id+'" data-action="obsinput" data-field="elec" data-boat="'+b.id+'" inputmode="decimal" placeholder="Electricidad" value="'+escapeHtml(sx.elec||"")+'">';
+          html += '      <label class="obs-lbl" for="agua_'+b.id+'">Consumo de agua</label><input class="obs-input" id="agua_'+b.id+'" data-action="obsinput" data-field="agua" data-boat="'+b.id+'" inputmode="decimal" placeholder="Agua" value="'+escapeHtml(sx.agua||"")+'">';
+          html += '      <label class="obs-lbl" for="obs_'+b.id+'">Observaciones</label><textarea class="obs-input obs-text" id="obs_'+b.id+'" data-action="obsinput" data-field="obs" data-boat="'+b.id+'" rows="2" placeholder="Observación (opcional)">'+escapeHtml(sx.obs||"")+'</textarea>';
+          html += '    </div>';
+        } else if(obsSalida(salida)){
+          html += '    <div class="obs-summary">'+escapeHtml(obsSalida(salida))+'</div>';
         }
         html += '  </div>';
         html += '  ' + (state.checksSwapped ? salidaHtml : vistoRight);
@@ -1351,12 +1366,7 @@ main{padding:18px 16px;}
         '<div class="field"><label>Embarcación</label><input id="m_embarcacion" placeholder="Nombre (si se conoce)"></div>'+
         '<div class="field"><label>Matrícula</label><input id="m_matricula" placeholder="Matrícula (si se conoce)"></div>'+
         atraqueFieldHtml+
-        '<div class="obs-group">'+
-          '<div class="obs-group-title">Observaciones</div>'+
-          '<div class="field"><label for="m_elec">Consumo de electricidad</label><input id="m_elec" class="one-line" inputmode="decimal" placeholder="Lectura o consumo"></div>'+
-          '<div class="field"><label for="m_agua">Consumo de agua</label><input id="m_agua" class="one-line" inputmode="decimal" placeholder="Lectura o consumo"></div>'+
-          '<div class="field"><label for="m_observaciones">Observaciones</label><textarea id="m_observaciones" rows="4" placeholder="Cualquier información necesaria"></textarea></div>'+
-        '</div>'+
+        '<div class="field"><label for="m_observaciones">Observaciones</label><textarea id="m_observaciones" rows="4" placeholder="Cualquier información necesaria"></textarea></div>'+
         '<div class="modal-actions">'+
           '<button class="btn btn-outline" id="m_cancel">Cancelar</button>'+
           '<button class="btn btn-sea" id="m_save">Guardar</button>'+
@@ -1378,8 +1388,6 @@ main{padding:18px 16px;}
         if(mA) atraque = "A" + mA[1].padStart(3, "0");
       }
       var observaciones = document.getElementById("m_observaciones").value.trim();
-      var elec = document.getElementById("m_elec").value.trim();
-      var agua = document.getElementById("m_agua").value.trim();
       var zona = modalState.zona;
       // Cerramos el modal ANTES de llamar a addEntrada: addEntrada dispara
       // render() internamente, y si modalState siguiera activo en ese
@@ -1392,8 +1400,6 @@ main{padding:18px 16px;}
         embarcacion: embarcacion,
         matricula: matricula,
         atraque: atraque,
-        elec: elec,
-        agua: agua,
         observaciones: observaciones
       });
     };
@@ -1443,7 +1449,17 @@ main{padding:18px 16px;}
       });
     });
     root.querySelectorAll('[data-action="obsinput"]').forEach(function(el){
-      el.addEventListener("change", function(){ setObs(el.getAttribute("data-boat"), el.value); });
+      el.addEventListener("change", function(){
+        setObs(el.getAttribute("data-boat"), el.value.trim(), el.getAttribute("data-field"));
+        // Al anotar consumos u observaciones la embarcación queda como salida:
+        // se refleja en la tarjeta sin redibujar (para no perder el foco).
+        var card = el.closest(".boat-card");
+        if(card){
+          card.classList.add("checked");
+          var box = card.querySelector(".mark-salida .mark-box");
+          if(box) box.classList.add("on");
+        }
+      });
     });
     root.querySelectorAll('[data-action="removeentrada"]').forEach(function(el){
       el.addEventListener("click", function(){ removeEntrada(el.getAttribute("data-id")); });
