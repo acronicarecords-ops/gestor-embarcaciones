@@ -3,9 +3,9 @@
 // solo como respaldo si falla la red). Así, cada vez que se publica una
 // actualización, quien la abra con conexión la ve al momento; la copia en
 // caché solo entra en juego si en ese momento no hay internet.
-var SHELL_CACHE = "gestor-embarcaciones-shell-v2";
-var RUNTIME_CACHE = "gestor-embarcaciones-runtime-v2";
-var SHELL_URLS = ["./", "manifest.json", "icon-192.png", "icon-512.png"];
+var SHELL_CACHE = "gestor-embarcaciones-shell-v3";
+var RUNTIME_CACHE = "gestor-embarcaciones-runtime-v3";
+var SHELL_URLS = ["./", "manifest.json", "icon-192.png", "icon-512.png", "icon-maskable-192.png", "icon-maskable-512.png", "apple-touch-icon.png", "favicon.ico", "favicon-32.png"];
 
 self.addEventListener("install", function(event){
   event.waitUntil(
