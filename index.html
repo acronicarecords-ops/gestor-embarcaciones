@@ -1,32 +1,5 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Revision de Embarcaciones - Puerto Sotogrande</title>
-<meta name="description" content="Revisión diaria de embarcaciones por zonas — Puerto Sotogrande">
-<meta property="og:type" content="website">
-<meta property="og:site_name" content="Puerto Sotogrande">
-<meta property="og:title" content="Revision de Embarcaciones - Puerto Sotogrande">
-<meta property="og:description" content="Revisión diaria de embarcaciones por zonas — Puerto Sotogrande">
-<meta property="og:url" content="https://gestor-revision-pst.netlify.app/">
-<meta property="og:image" content="https://gestor-revision-pst.netlify.app/favicon.jpg">
-<meta property="og:image:type" content="image/jpeg">
-<meta property="og:image:width" content="350">
-<meta property="og:image:height" content="350">
-<meta name="twitter:card" content="summary">
-<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
-<link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png">
-<link rel="shortcut icon" href="favicon.ico">
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#20305a">
-<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Embarcaciones PST">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-</head>
-<body>
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Gestor PST Corporativo</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -473,7 +446,7 @@ main{padding:18px 16px;}
 .header-left{display:flex; flex-direction:column; gap:6px; min-width:0;}
 .m-show{display:none;}
 .brand-text h1 .h1-l2{display:inline; font:inherit; color:inherit; letter-spacing:inherit; margin:0; line-height:inherit;}
-@media (max-width:640px){
+@media (max-width:640px), (max-height:500px){
   header{padding:8px 12px 8px 12px;}
   .header-row{flex-wrap:nowrap; align-items:center; gap:8px;}
   .header-left{flex:1 1 auto; gap:4px;}
@@ -492,11 +465,90 @@ main{padding:18px 16px;}
   header .btn{padding:6px 9px; font-size:11px; line-height:13px; border-radius:5px; letter-spacing:0;}
   header .btn-ghost{padding:5px 9px;}
 }
+/* Barra de botones de zona (v4) */
+.header-actions{grid-template-columns:1fr;}
+.zone-tools{justify-content:space-between; flex-wrap:nowrap; gap:6px;}
+.zone-tools-right{display:flex; align-items:center; justify-content:flex-end; gap:6px; flex-wrap:wrap; margin-left:auto;}
+.zone-tools .swap-btn{padding:6px 7px; font-size:11px; letter-spacing:0; white-space:nowrap; line-height:14px;}
+.zone-tools{gap:5px; align-items:flex-start;} .zone-tools-right{gap:5px;}
+/* Si los botones de la derecha pasan a dos líneas, + Añadir entrada queda alineado con la primera */
+@media (max-width:420px){ .zone-tools .sort-btn{margin-right:6px;} }
+.zone-tools .add-btn{background:var(--sea); flex-shrink:0;}
 /* El parte exportado conserva su formato original */
 .print-preview-paper,#printArea,.p-head,.p-section-title,.p-date,.p-title,table.p-table{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;}}
+/* "+ Añadir entrada" en la cabecera, debajo de Compartir, con fondo blanco */
+header .btn-white{background:#fff; color:var(--navy); border:1px solid #fff;}
+header .btn-white:hover{background:var(--cream);}
+/* Barra de botones de zona: siempre en UNA línea; la letra se ajusta sola (fitZoneTools) */
+.zone-tools{justify-content:flex-end;}
+.zone-tools-right{flex-wrap:nowrap; align-items:stretch; min-width:0; max-width:100%;}
+.zone-tools .swap-btn{font-size:var(--zt-fs,11px); padding:6px .64em; white-space:nowrap; overflow:hidden; text-overflow:clip; text-align:center;}
+.zone-tools .search-btn{flex:0 0 auto; padding:6px 9px;}
+.zone-tools .sort-btn{flex:0 0 auto; align-self:center;}
+.zone-tools-right.zt-wrap .swap-btn:not(.search-btn){white-space:normal; line-height:1.15; padding:4px .4em;}
+.zone-tools-right.zt-wrap .search-btn{padding:4px 7px;}
+.zone-tools-right.zt-wrap{gap:4px;}
+/* En el móvil la barra ocupa todo el ancho y los botones de texto se reparten el espacio */
+@media (max-width:640px), (max-height:500px){
+  .zone-tools-right{width:100%; margin-left:0;}
+  .zone-tools-right .swap-btn:not(.search-btn){flex:1 1 auto; min-width:0;}
+}
+/* ---- Búsqueda de embarcaciones (lupa) ---- */
+.zone-tools .search-btn{display:inline-flex; align-items:center; justify-content:center; padding:6px 9px;}
+.search-btn svg{width:14px; height:14px; display:block; stroke:#fff;}
+.overlay.search-overlay{align-items:flex-start; padding:10px;}
+.search-panel{
+  background:var(--cream); border-radius:6px; box-shadow:var(--shadow-hi);
+  width:100%; max-width:560px; max-height:calc(100vh - 20px); max-height:calc(100dvh - 20px);
+  display:flex; flex-direction:column; overflow:hidden;
+}
+.search-bar{display:flex; align-items:center; gap:8px; padding:10px; background:var(--navy); flex-shrink:0;}
+.search-field{flex:1; min-width:0; display:flex; align-items:center; gap:8px; background:#fff; border-radius:6px; padding:0 4px 0 10px; min-height:44px;}
+.search-field svg{width:18px; height:18px; flex-shrink:0; stroke:var(--navy);}
+.search-field input{
+  flex:1; min-width:0; border:none; outline:none; background:transparent; font-family:var(--f-body);
+  font-size:16px; color:var(--navy); padding:10px 0; -webkit-appearance:none; appearance:none;
+}
+.search-field input::-webkit-search-cancel-button{display:none;}
+.search-clear{
+  border:none; background:none; color:var(--muted); font-size:22px; line-height:1; cursor:pointer;
+  width:36px; height:36px; display:flex; align-items:center; justify-content:center; border-radius:6px; flex-shrink:0;
+}
+.search-clear[hidden]{display:none!important;}
+.search-close{
+  border:1px solid rgba(255,255,255,.35); background:transparent; color:#fff; border-radius:6px;
+  font-family:var(--f-body); font-weight:600; font-size:13px; padding:0 12px; min-height:44px; cursor:pointer; flex-shrink:0;
+}
+.search-meta{font-size:11px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); padding:8px 12px 4px; flex-shrink:0;}
+.search-results{overflow-y:auto; padding:4px 10px 10px; display:flex; flex-direction:column; gap:6px; -webkit-overflow-scrolling:touch;}
+.search-empty{color:var(--muted); font-size:14px; text-align:center; padding:24px 10px;}
+.search-item{
+  display:flex; align-items:center; gap:10px; width:100%; text-align:left; cursor:pointer;
+  background:#fff; border:1px solid transparent; border-radius:6px; padding:10px 12px; min-height:52px;
+  font-family:var(--f-body); color:var(--navy); box-shadow:0 1px 0 rgba(32,48,90,.06);
+  -webkit-tap-highlight-color:transparent;
+}
+.search-item:active{filter:brightness(.97);}
+.search-item.visto,.search-item.entrada{background:var(--entrada-bg); border-color:var(--entrada-border);}
+.search-item.checked{background:var(--exit-bg); border-color:var(--exit-border);}
+.si-main{flex:1; min-width:0;}
+.si-name{font-weight:700; font-size:15px; color:var(--navy); overflow-wrap:anywhere;}
+.si-mat{font-weight:600; font-size:13px; color:var(--sea); letter-spacing:.02em; margin-top:1px; overflow-wrap:anywhere;}
+.si-side{display:flex; flex-direction:column; align-items:flex-end; gap:3px; flex-shrink:0; max-width:42%;}
+.si-zone{font-size:12px; font-weight:600; color:var(--muted); text-align:right;}
+.si-amarre{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-weight:700; font-size:12px; color:var(--navy); background:var(--cream); padding:1px 6px; border-radius:4px; font-variant-numeric:tabular-nums;}
+.si-tag{font-size:9px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--sea);}
+.search-item mark{background:#ffe58a; color:inherit; border-radius:2px; padding:0 1px;}
+/* Tarjeta encontrada: se resalta un momento al llegar */
+.boat-card.search-flash{outline:3px solid var(--sky); outline-offset:2px; animation:searchFlash 1.1s ease-in-out 2;}
+@keyframes searchFlash{0%,100%{box-shadow:0 0 0 0 rgba(62,168,224,0);} 50%{box-shadow:0 0 0 8px rgba(62,168,224,.35);}}
+@media (prefers-reduced-motion:reduce){.boat-card.search-flash{animation:none;}}
 </style>
 
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#20305a">
+<link rel="apple-touch-icon" href="icon-192.png">
 <div id="app"></div>
 <div id="printArea"></div>
 
@@ -809,6 +861,17 @@ main{padding:18px 16px;}
       }
 
       state.boats = boats;
+      // Listado nuevo = revisión nueva: todo vuelve a la configuración inicial
+      // (cada día puede hacer la revisión un compañero distinto).
+      state.zoneOrder = [];            // orden de pestañas original
+      state.sortDesc = {};             // 🔃 ascendente en todas las zonas
+      state.tabsVertical = false;      // pestañas arriba
+      state.checksSwapped = false;     // casillas en su posición original
+      lsSet(LS_SORT, state.sortDesc);
+      lsSet(LS_TABS_VERTICAL, {on:false});
+      lsSet(LS_CHECKS_SWAP, {on:false});
+      state.day = { salidas:{}, entradas:[], vistos:{} }; // sin marcas ni entradas añadidas
+      try{ await saveDay(); }catch(e){}
       ensureZoneOrder();
       state.currentZone = state.zoneOrder[0] || null;
       // Al importar un listado nuevo se reinician las posiciones guardadas.
@@ -1278,9 +1341,12 @@ main{padding:18px 16px;}
     html += renderTabs();
     html += '<main data-zone="'+escapeHtml(state.currentZone)+'">';
     html += '<div class="zone-tools">';
+    html += '  <div class="zone-tools-right">';
+    html += '  <button class="swap-btn search-btn" data-action="opensearch" title="Buscar embarcación por nombre o matrícula" aria-label="Buscar embarcación">'+SEARCH_ICON+'</button>';
     html += '  <button class="swap-btn" data-action="toggletabs" title="Cambiar posición de las pestañas">'+(state.tabsVertical? "Pestañas arriba":"Pestañas al lado")+'</button>';
     html += '  <button class="swap-btn" data-action="swapchecks" title="Intercambiar de lado las casillas de Visto y Salida">Cambiar casillas</button>';
     html += '    <button class="sort-btn'+(sortDesc?" desc":"")+'" data-action="togglesort" title="'+(sortDesc?"Orden descendente (pulsa para ascendente)":"Orden ascendente (pulsa para descendente)")+'" aria-label="Cambiar orden">🔃</button>';
+    html += '  </div>';
     html += '</div>';
     html += '<div class="zone-header">';
     html += '  <div class="zone-title">Zona '+escapeHtml(state.currentZone)+'</div>';
@@ -1299,7 +1365,7 @@ main{padding:18px 16px;}
         var isVisto = !!state.day.vistos[b.id];
         var obsOpen = !!state.obsOpen[b.id];
         var cardClass = (isVisto?"visto ":"")+(isChecked?"checked":"");
-        html += '<div class="boat-card '+cardClass+'">';
+        html += '<div class="boat-card '+cardClass+'" data-card="'+escapeHtml(b.id)+'">';
         var tick = '<svg viewBox="0 0 24 24" fill="none"><path d="M4 12l5 5L20 6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
         var salidaHtml = '<div class="mark mark-salida" data-boat="'+b.id+'" data-action="toggle" title="Marcar salida"><div class="mark-box '+(isChecked?"on":"")+'">'+tick+'</div><span class="mark-label">Salida</span></div>';
         var vistoBox = '<div class="mark-box '+(isVisto?"on":"")+'">'+tick+'</div>';
@@ -1334,7 +1400,7 @@ main{padding:18px 16px;}
       html += '  <div class="extra-title">Entradas añadidas en esta zona</div>';
       html += '  <div class="boat-list">';
       entradasZona.forEach(function(e){
-        html += '<div class="boat-card entrada">';
+        html += '<div class="boat-card entrada" data-card="'+escapeHtml(e.id)+'">';
         html += '  <div class="boat-info">';
         html += '    <div class="boat-name">'+escapeHtml(e.embarcacion)+(e.matricula? ' <span class="matricula">'+escapeHtml(e.matricula)+'</span>':'')+'</div>';
         html += '    <div class="boat-meta"><span class="amarre">'+escapeHtml(e.atraque)+'</span>'+(obsEntrada(e)? escapeHtml(obsEntrada(e)):'')+'</div>';
@@ -1350,6 +1416,7 @@ main{padding:18px 16px;}
     if(state.tabsVertical){ html += '</div>'; }
 
     root.innerHTML = html;
+    fitZoneTools();
     restoreScroll();
     saveViewSoon();
     bindEvents();
@@ -1376,10 +1443,9 @@ main{padding:18px 16px;}
     h += '    </div>';
     h += '   </div>';
     h += '    <div class="header-actions">';
-    h += '      <span aria-hidden="true"></span>';
     h += '      <label class="btn btn-ghost">Actualizar listado<input type="file" id="fileInput" accept=".xlsx,.xls"></label>';
-    h += '      <button class="btn btn-coral" data-action="openentrada">+ Añadir entrada</button>';
     h += '      <button class="btn btn-sea" data-action="print">Compartir</button>';
+    h += '      <button class="btn btn-white" data-action="openentrada" title="Añadir una entrada en la zona abierta">+ Añadir entrada</button>';
     h += '    </div>';
     h += '  </div>';
     h += '</header>';
@@ -1533,9 +1599,314 @@ main{padding:18px 16px;}
       render();
     });
 
+    var searchBtn = root.querySelector('[data-action="opensearch"]');
+    if(searchBtn) searchBtn.addEventListener("click", openSearch);
+
     var toggleTabsBtn = root.querySelector('[data-action="toggletabs"]');
     if(toggleTabsBtn) toggleTabsBtn.addEventListener("click", toggleTabsOrientation);
   }
+
+  // ---------------- Barra de botones de zona en una sola línea ----------------
+  // Los botones se ajustan al ancho disponible (pantalla, pestañas al lado,
+  // giro del móvil): se reduce la letra hasta que todo cabe en una fila; si ni
+  // con la letra mínima cabe, el texto de los botones pasa a dos líneas
+  // dentro del propio botón, pero la barra sigue siendo una sola fila.
+  var ZT_FULL_MQ = "(max-width:640px), (max-height:500px)";
+  function fitZoneTools(){
+    var bar = root.querySelector(".zone-tools-right");
+    if(!bar) return;
+    var full = window.matchMedia && window.matchMedia(ZT_FULL_MQ).matches;
+    var fs = full ? 13 : 11, MIN = 9;
+    var btns = bar.querySelectorAll(".swap-btn:not(.search-btn)");
+    function over(){
+      if(bar.scrollWidth > bar.clientWidth + 1) return true;
+      var box = bar.parentElement;
+      if(box && bar.getBoundingClientRect().width > box.clientWidth + 1) return true;
+      for(var i=0;i<btns.length;i++){ if(btns[i].scrollWidth > btns[i].clientWidth + 1) return true; }
+      return false;
+    }
+    var start = fs;
+    bar.classList.remove("zt-wrap");
+    bar.style.setProperty("--zt-fs", fs + "px");
+    while(over() && fs > MIN){ fs -= 0.5; bar.style.setProperty("--zt-fs", fs + "px"); }
+    if(over()){
+      // No cabe en una línea de texto: los botones pasan a dos líneas de
+      // texto y se vuelve a ajustar desde el tamaño inicial (más legible).
+      bar.classList.add("zt-wrap");
+      fs = start;
+      bar.style.setProperty("--zt-fs", fs + "px");
+      while(over() && fs > 8){ fs -= 0.5; bar.style.setProperty("--zt-fs", fs + "px"); }
+    }
+  }
+  var ztTimer = null;
+  window.addEventListener("resize", function(){ clearTimeout(ztTimer); ztTimer = setTimeout(fitZoneTools, 80); });
+  window.addEventListener("orientationchange", function(){ setTimeout(fitZoneTools, 250); });
+  if(document.fonts && document.fonts.ready) document.fonts.ready.then(function(){ fitZoneTools(); });
+
+  // ---------------- Búsqueda de embarcaciones ----------------
+  // Busca en TODAS las zonas por nombre y matrícula (listado maestro y
+  // entradas añadidas a mano). Antes de comparar se "limpia" el texto:
+  // sin mayúsculas, sin tildes y sin espacios, guiones, puntos ni barras,
+  // de modo que "7 AL 2 123 05" encuentra "7ª-AL-2-123-05". Además tolera
+  // erratas (1 error en textos de 4-6 caracteres, 2 a partir de 7).
+  var SEARCH_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></svg>';
+  var SEARCH_MAX_RESULTS = 15;
+  var searchUi = null; // {overlay, input, timer, index, pushed}
+
+  function searchNormChar(ch){
+    // "ª" y "º" (7ª lista) no se teclean al buscar: se ignoran.
+    if(ch === "\u00aa" || ch === "\u00ba") return "";
+    return ch.normalize("NFKD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "");
+  }
+  // Devuelve el texto limpio y, para cada carácter limpio, su posición en el
+  // texto original (sirve para resaltar la parte encontrada).
+  function searchNorm(raw){
+    raw = String(raw == null ? "" : raw);
+    var out = "", map = [];
+    for(var i=0;i<raw.length;i++){
+      var n = searchNormChar(raw[i]);
+      for(var k=0;k<n.length;k++){ out += n[k]; map.push(i); }
+    }
+    return { raw: raw, s: out, map: map };
+  }
+  function searchQueryNorm(q){ return searchNorm(q).s; }
+
+  // Coincidencia aproximada dentro del texto (distancia de edición con
+  // intercambio de letras contiguas). Devuelve {d, start, end} o null.
+  function searchApprox(q, t, maxD){
+    var m = q.length, n = t.length, j;
+    if(!m || !n) return null;
+    var prev = new Array(n+1), sPrev = new Array(n+1), prev2 = null, sPrev2 = null;
+    for(j=0;j<=n;j++){ prev[j] = 0; sPrev[j] = j; }
+    for(var i=1;i<=m;i++){
+      var cur = new Array(n+1), sCur = new Array(n+1);
+      cur[0] = i; sCur[0] = 0;
+      for(j=1;j<=n;j++){
+        var best = prev[j-1] + (q[i-1] === t[j-1] ? 0 : 1), bs = sPrev[j-1];
+        if(prev[j] + 1 < best){ best = prev[j] + 1; bs = sPrev[j]; }
+        if(cur[j-1] + 1 < best){ best = cur[j-1] + 1; bs = sCur[j-1]; }
+        if(i>1 && j>1 && q[i-1] === t[j-2] && q[i-2] === t[j-1] && prev2[j-2] + 1 < best){ best = prev2[j-2] + 1; bs = sPrev2[j-2]; }
+        cur[j] = best; sCur[j] = bs;
+      }
+      prev2 = prev; sPrev2 = sPrev; prev = cur; sPrev = sCur;
+    }
+    var bestD = Infinity, end = -1;
+    for(j=1;j<=n;j++){ if(prev[j] < bestD){ bestD = prev[j]; end = j; } }
+    if(bestD > maxD || end <= sPrev[end]) return null;
+    return { d: bestD, start: sPrev[end], end: end };
+  }
+
+  function searchMatchField(q, f){
+    if(!f || !f.s) return null;
+    var t = f.s;
+    if(t === q) return { score: 100, start: 0, end: t.length };
+    var p = t.indexOf(q);
+    if(p === 0) return { score: 90, start: 0, end: q.length };
+    if(p > 0){
+      // Empieza una palabra (p. ej. "perla" en "La Perla") → mejor puesto
+      var prevRaw = f.raw.charAt(f.map[p] - 1);
+      var wordStart = !searchNormChar(prevRaw);
+      return { score: wordStart ? 85 : 80, start: p, end: p + q.length };
+    }
+    var maxD = q.length >= 7 ? 2 : (q.length >= 4 ? 1 : 0);
+    if(!maxD) return null;
+    var r = searchApprox(q, t, maxD);
+    if(!r) return null;
+    return { score: 70 - 10*r.d, start: r.start, end: r.end };
+  }
+
+  function searchHighlight(f, m){
+    if(!f) return "";
+    if(!m || !f.map.length) return escapeHtml(f.raw);
+    var a = f.map[m.start], b = f.map[m.end-1] + 1;
+    return escapeHtml(f.raw.slice(0, a)) + "<mark>" + escapeHtml(f.raw.slice(a, b)) + "</mark>" + escapeHtml(f.raw.slice(b));
+  }
+
+  function searchCleanName(n){ return (n && n !== "(sin nombre)") ? n : ""; }
+
+  function buildSearchIndex(){
+    var idx = [];
+    state.boats.forEach(function(b){
+      idx.push({ kind:"boat", id:b.id, zona:b.zona, amarre:b.amarre,
+        nameRaw: b.nombre, name: searchNorm(searchCleanName(b.nombre)), mat: searchNorm(b.matricula) });
+    });
+    state.day.entradas.forEach(function(e){
+      idx.push({ kind:"entrada", id:e.id, zona:e.zona, amarre:e.atraque,
+        nameRaw: e.embarcacion, name: searchNorm(searchCleanName(e.embarcacion)), mat: searchNorm(e.matricula) });
+    });
+    return idx;
+  }
+
+  function runSearch(qRaw){
+    var q = searchQueryNorm(qRaw);
+    if(q.length < 2) return { q: q, total: 0, list: [] };
+    var found = [];
+    searchUi.index.forEach(function(it){
+      var mn = searchMatchField(q, it.name);
+      var mm = searchMatchField(q, it.mat);
+      var score = Math.max(mn ? mn.score : 0, mm ? mm.score : 0);
+      if(!score) return;
+      found.push({ it: it, score: score, mn: mn, mm: mm });
+    });
+    found.sort(function(a, b){
+      if(b.score !== a.score) return b.score - a.score;
+      var za = state.zoneOrder.indexOf(a.it.zona), zb = state.zoneOrder.indexOf(b.it.zona);
+      if(za !== zb) return za - zb;
+      return String(a.it.amarre||"").localeCompare(String(b.it.amarre||""), "es", {numeric:true});
+    });
+    return { q: q, total: found.length, list: found.slice(0, SEARCH_MAX_RESULTS) };
+  }
+
+  function renderSearchResults(){
+    if(!searchUi) return;
+    var qRaw = searchUi.input.value;
+    var res = runSearch(qRaw);
+    var meta = searchUi.overlay.querySelector("#s_meta");
+    var box = searchUi.overlay.querySelector("#s_results");
+    searchUi.overlay.querySelector("#s_clear").hidden = !qRaw;
+    searchUi.lastResults = res.list;
+    if(res.q.length < 2){
+      meta.textContent = "";
+      box.innerHTML = '<div class="search-empty">Escribe al menos 2 letras o números del nombre o de la matrícula.</div>';
+      return;
+    }
+    if(!res.total){
+      meta.textContent = "";
+      box.innerHTML = '<div class="search-empty">Sin resultados para «'+escapeHtml(qRaw.trim())+'».</div>';
+      return;
+    }
+    meta.textContent = res.total > res.list.length
+      ? "Mostrando los " + res.list.length + " más parecidos de " + res.total
+      : (res.total === 1 ? "1 resultado" : res.total + " resultados");
+    var h = "";
+    res.list.forEach(function(r, i){
+      var it = r.it, cls = "";
+      if(it.kind === "entrada") cls = "entrada";
+      else {
+        var sx = state.day.salidas[it.id];
+        if(sx && sx.checked) cls = "checked";
+        else if(state.day.vistos[it.id]) cls = "visto";
+      }
+      var nameHtml = it.name.s ? searchHighlight(it.name, r.mn) : escapeHtml(it.nameRaw || "(sin nombre)");
+      h += '<button class="search-item '+cls+'" data-i="'+i+'">'+
+             '<div class="si-main"><div class="si-name">'+nameHtml+'</div>'+
+               (it.mat.raw ? '<div class="si-mat">'+searchHighlight(it.mat, r.mm)+'</div>' : '')+
+             '</div>'+
+             '<div class="si-side">'+
+               (it.kind === "entrada" ? '<span class="si-tag">Entrada añadida</span>' : '')+
+               '<span class="si-zone">'+escapeHtml(it.zona)+'</span>'+
+               (it.amarre ? '<span class="si-amarre">'+escapeHtml(it.amarre)+'</span>' : '')+
+             '</div>'+
+           '</button>';
+    });
+    box.innerHTML = h;
+    box.scrollTop = 0;
+  }
+
+  function fitSearchPanel(){
+    if(!searchUi) return;
+    var panel = searchUi.overlay.querySelector(".search-panel");
+    var vv = window.visualViewport;
+    if(panel && vv) panel.style.maxHeight = Math.max(200, vv.height - 20) + "px";
+  }
+
+  function openSearch(){
+    if(searchUi) return;
+    var overlay = document.createElement("div");
+    overlay.className = "overlay search-overlay";
+    overlay.innerHTML =
+      '<div class="search-panel" role="dialog" aria-label="Buscar embarcación">'+
+        '<div class="search-bar">'+
+          '<div class="search-field">'+SEARCH_ICON+
+            '<input id="s_q" type="search" placeholder="Nombre o matrícula" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search" aria-label="Nombre o matrícula">'+
+            '<button class="search-clear" id="s_clear" aria-label="Borrar búsqueda" hidden>×</button>'+
+          '</div>'+
+          '<button class="search-close" id="s_close">Cerrar</button>'+
+        '</div>'+
+        '<div class="search-meta" id="s_meta"></div>'+
+        '<div class="search-results" id="s_results"></div>'+
+      '</div>';
+    document.body.appendChild(overlay);
+    searchUi = { overlay: overlay, input: overlay.querySelector("#s_q"), timer: null, index: buildSearchIndex(), lastResults: [], pushed: false };
+
+    // Botón "atrás" de Android: cierra la búsqueda en vez de salir de la app.
+    try{ history.pushState({ pstSearch: true }, ""); searchUi.pushed = true; }catch(e){}
+
+    var input = searchUi.input;
+    input.addEventListener("input", function(){
+      clearTimeout(searchUi.timer);
+      searchUi.timer = setTimeout(renderSearchResults, 60);
+    });
+    input.addEventListener("keydown", function(ev){
+      if(ev.key === "Enter"){
+        ev.preventDefault();
+        clearTimeout(searchUi.timer); renderSearchResults();
+        if(searchUi.lastResults.length) goToSearchResult(searchUi.lastResults[0].it);
+      } else if(ev.key === "Escape"){
+        closeSearch();
+      }
+    });
+    overlay.querySelector("#s_clear").addEventListener("click", function(){
+      input.value = ""; renderSearchResults(); input.focus();
+    });
+    overlay.querySelector("#s_close").addEventListener("click", closeSearch);
+    overlay.addEventListener("click", function(ev){ if(ev.target === overlay) closeSearch(); });
+    overlay.querySelector("#s_results").addEventListener("click", function(ev){
+      var btn = ev.target.closest && ev.target.closest(".search-item");
+      if(!btn) return;
+      var r = searchUi.lastResults[parseInt(btn.getAttribute("data-i"), 10)];
+      if(r) goToSearchResult(r.it);
+    });
+    if(window.visualViewport){
+      window.visualViewport.addEventListener("resize", fitSearchPanel);
+      fitSearchPanel();
+    }
+    renderSearchResults();
+    setTimeout(function(){ input.focus(); }, 30);
+  }
+
+  // fromPopState: la búsqueda se cierra porque se pulsó "atrás".
+  function closeSearch(fromPopState){
+    if(!searchUi) return;
+    var ui = searchUi;
+    searchUi = null;
+    clearTimeout(ui.timer);
+    if(window.visualViewport) window.visualViewport.removeEventListener("resize", fitSearchPanel);
+    ui.overlay.remove();
+    if(ui.pushed && fromPopState !== true){
+      try{ if(history.state && history.state.pstSearch) history.back(); }catch(e){}
+    }
+  }
+  window.addEventListener("popstate", function(){ if(searchUi) closeSearch(true); });
+
+  function goToSearchResult(it){
+    closeSearch();
+    captureScroll();
+    state.currentZone = it.zona;
+    render();
+    var mainEl = root.querySelector("main");
+    var card = null;
+    root.querySelectorAll(".boat-card[data-card]").forEach(function(c){ if(c.getAttribute("data-card") === it.id) card = c; });
+    if(mainEl && card){
+      var mr = mainEl.getBoundingClientRect(), cr = card.getBoundingClientRect();
+      mainEl.scrollTop += (cr.top - mr.top) - Math.max(0, (mainEl.clientHeight - cr.height) / 2);
+      state.listScroll[it.zona] = mainEl.scrollTop;
+      card.classList.add("search-flash");
+      setTimeout(function(){ card.classList.remove("search-flash"); }, 2400);
+    }
+    // Que la pestaña de la zona quede a la vista en la barra.
+    var tw = root.querySelector(".tabbar-wrap");
+    var tab = null;
+    root.querySelectorAll(".tab[data-zone]").forEach(function(t){ if(t.getAttribute("data-zone") === it.zona) tab = t; });
+    if(tw && tab){
+      var wr = tw.getBoundingClientRect(), tr = tab.getBoundingClientRect();
+      if(state.tabsVertical) tw.scrollTop += (tr.top - wr.top) - (tw.clientHeight - tr.height) / 2;
+      else tw.scrollLeft += (tr.left - wr.left) - (tw.clientWidth - tr.width) / 2;
+      state.tabScroll = { x: tw.scrollLeft, y: tw.scrollTop };
+    }
+    saveViewSoon();
+  }
+
 
   loadAll();
 })();
@@ -1547,5 +1918,5 @@ if("serviceWorker" in navigator){
   });
 }
 </script>
-</body>
-</html>
+
+</body></html>
