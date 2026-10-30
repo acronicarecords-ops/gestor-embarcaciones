@@ -1,53 +1,30 @@
-// Service worker: permite abrir la app sin conexión, pero SIEMPRE prioriza
-// la versión más reciente publicada cuando hay conexión (red primero, caché
-// solo como respaldo si falla la red). Así, cada vez que se publica una
-// actualización, quien la abra con conexión la ve al momento; la copia en
-// caché solo entra en juego si en ese momento no hay internet.
-var SHELL_CACHE = "gestor-embarcaciones-shell-v3";
-var RUNTIME_CACHE = "gestor-embarcaciones-runtime-v3";
-var SHELL_URLS = ["./", "manifest.json", "icon-192.png", "icon-512.png", "icon-maskable-192.png", "icon-maskable-512.png", "apple-touch-icon.png", "favicon.ico", "favicon-32.png"];
+// Service worker de la app corporativa PST: red primero, caché solo sin conexión.
+const CACHE = "pst-corp-v1";
+const CORE = ["./", "index.html", "manifest.json", "icon-192.png", "icon-512.png"];
 
-self.addEventListener("install", function(event){
-  event.waitUntil(
-    caches.open(SHELL_CACHE).then(function(cache){
-      return cache.addAll(SHELL_URLS).catch(function(){ /* alguna URL pudo fallar; no es crítico */ });
-    })
-  );
+self.addEventListener("install", (e) => {
+  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(CORE)).catch(() => {}));
   self.skipWaiting();
 });
 
-self.addEventListener("activate", function(event){
-  event.waitUntil(
-    caches.keys().then(function(keys){
-      return Promise.all(
-        keys.filter(function(k){ return k !== SHELL_CACHE && k !== RUNTIME_CACHE; })
-            .map(function(k){ return caches.delete(k); })
-      );
-    })
+self.addEventListener("activate", (e) => {
+  e.waitUntil(
+    caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
   );
   self.clients.claim();
 });
 
-self.addEventListener("fetch", function(event){
-  var req = event.request;
-  if(req.method !== "GET") return;
-
-  var url = new URL(req.url);
-  var isSameOrigin = url.origin === self.location.origin;
-  var cacheName = isSameOrigin ? SHELL_CACHE : RUNTIME_CACHE;
-
-  // Red primero siempre (propia app y librerías externas): si hay
-  // conexión, se usa y se refresca la caché; si falla (sin conexión), se
-  // recurre a lo último que se guardó.
-  event.respondWith(
-    fetch(req).then(function(res){
-      if(res && res.ok){
-        var copy = res.clone();
-        caches.open(cacheName).then(function(cache){ cache.put(req, copy); });
-      }
-      return res;
-    }).catch(function(){
-      return caches.match(req).then(function(cached){ return cached || Promise.reject("sin conexión y sin caché"); });
-    })
+self.addEventListener("fetch", (e) => {
+  if (e.request.method !== "GET") return;
+  e.respondWith(
+    fetch(e.request)
+      .then((res) => {
+        if (res && res.ok && new URL(e.request.url).origin === self.location.origin) {
+          const copy = res.clone();
+          caches.open(CACHE).then((c) => c.put(e.request, copy));
+        }
+        return res;
+      })
+      .catch(() => caches.match(e.request).then((r) => r || caches.match("index.html")))
   );
 });
