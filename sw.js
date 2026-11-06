@@ -1,5 +1,5 @@
 // Service worker de la app corporativa PST: red primero, caché solo sin conexión.
-const CACHE = "pst-corp-v1";
+const CACHE = "pst-corp-v2";
 const CORE = ["./", "index.html", "manifest.json", "icon-192.png", "icon-512.png"];
 
 self.addEventListener("install", (e) => {

@@ -740,10 +740,12 @@ header .btn-white:hover{background:var(--cream);}
         state.boats = localMaster.boats || [];
         state.masterUpdatedAt = localMaster.updatedAt || null;
       }
-      if(!state.zoneOrder.length){
-        var localOrder = lsGet(LS_ORDER);
-        if(localOrder && localOrder.order) state.zoneOrder = localOrder.order;
-      }
+    }
+    // La copia local del orden es la fuente de verdad en este dispositivo.
+    var localOrder = lsGet(LS_ORDER);
+    if(localOrder && localOrder.order && localOrder.order.length){
+      state.zoneOrder = localOrder.order.slice();
+      state.zoneOrderAll = localOrder.order.slice();
     }
 
     if(state.boats.length){
@@ -795,11 +797,25 @@ header .btn-white:hover{background:var(--cream);}
     }
   }
 
+  // Combina el orden visible con el orden completo guardado: las zonas que
+  // hoy no vienen en el Excel conservan su hueco para cuando vuelvan.
+  function mergedZoneOrder(){
+    var prev = (state.zoneOrderAll || []).slice();
+    var visible = state.zoneOrder.slice();
+    var queue = visible.slice();
+    var out = prev.map(function(z){ return visible.indexOf(z) !== -1 ? queue.shift() : z; });
+    queue.forEach(function(z){ if(out.indexOf(z) === -1) out.push(z); });
+    var seen = {};
+    return out.filter(function(z){ if(seen[z]) return false; seen[z] = 1; return true; });
+  }
+
   async function saveZoneOrder(){
-    lsSet(LS_ORDER, {order: state.zoneOrder});
+    var full = mergedZoneOrder();
+    state.zoneOrderAll = full;
+    lsSet(LS_ORDER, {order: full});
     if(!dbApi) return;
     try{
-      await dbApi.doc("state/zoneOrder").set({order: state.zoneOrder});
+      await dbApi.doc("state/zoneOrder").set({order: full});
     }catch(e){
       toast("No se pudo sincronizar el orden de pestañas; se ha guardado en este dispositivo.");
     }
@@ -861,15 +877,12 @@ header .btn-white:hover{background:var(--cream);}
       }
 
       state.boats = boats;
-      // Listado nuevo = revisión nueva: todo vuelve a la configuración inicial
-      // (cada día puede hacer la revisión un compañero distinto).
-      state.zoneOrder = [];            // orden de pestañas original
-      state.sortDesc = {};             // 🔃 ascendente en todas las zonas
-      state.tabsVertical = false;      // pestañas arriba
-      state.checksSwapped = false;     // casillas en su posición original
-      lsSet(LS_SORT, state.sortDesc);
-      lsSet(LS_TABS_VERTICAL, {on:false});
-      lsSet(LS_CHECKS_SWAP, {on:false});
+      // Listado nuevo: se reinician las marcas del día, pero los AJUSTES de la
+      // app (orden de pestañas, pestañas arriba/al lado, orden 🔃 de cada zona,
+      // posición de casillas) se conservan siempre en este dispositivo.
+      var savedOrder = lsGet(LS_ORDER);
+      if(savedOrder && savedOrder.order && savedOrder.order.length) state.zoneOrderAll = savedOrder.order.slice();
+      state.zoneOrder = (state.zoneOrderAll || state.zoneOrder || []).slice();
       state.day = { salidas:{}, entradas:[], vistos:{} }; // sin marcas ni entradas añadidas
       try{ await saveDay(); }catch(e){}
       ensureZoneOrder();
